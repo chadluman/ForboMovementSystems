@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Forbo Movement Systems | Sales Portal</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#mainWorkspace">Skip to sales workspace</a>
+
+    <section class="access-screen" id="loginScreen" aria-labelledby="loginTitle">
+      <div class="access-visual" aria-hidden="true">
+        <div class="brand-lockup brand-lockup-light">
+          <span class="brand-mark">forbo</span>
+          <span>movement systems</span>
+        </div>
+        <div class="access-visual-copy">
+          <p class="eyebrow">Sales workspace</p>
+          <h1>Movement is our business.</h1>
+          <p>Customer history, product selection, engineering references, and quote preparation in one focused workspace.</p>
+        </div>
+        <div class="belt-pattern"></div>
+      </div>
+      <div class="access-panel">
+        <form class="access-card" id="loginForm">
+          <div class="brand-lockup brand-lockup-dark">
+            <span class="brand-mark">forbo</span>
+            <span>movement systems</span>
+          </div>
+          <div>
+            <p class="eyebrow">Authorized access</p>
+            <h2 id="loginTitle">Sales representative login</h2>
+            <p class="form-intro">Sign in with your assigned credentials to access customer and quote information.</p>
+          </div>
+          <label for="loginEmail">Email address</label>
+          <input id="loginEmail" name="email" type="email" autocomplete="username" required>
+          <label for="loginPassword">Password</label>
+          <div class="password-field">
+            <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+            <button class="text-button" id="togglePassword" type="button" aria-label="Show password">Show</button>
+          </div>
+          <button class="primary-button access-submit" type="submit">Sign in</button>
+          <p class="form-status" id="loginStatus" role="alert"></p>
+          <p class="security-note">This portal contains customer and commercial information. Use is limited to authorized personnel.</p>
+        </form>
+      </div>
+    </section>
+
+    <section class="customer-gateway" id="customerGateway" hidden aria-labelledby="gatewayTitle">
+      <header class="gateway-header">
+        <div class="brand-lockup brand-lockup-dark">
+          <span class="brand-mark">forbo</span>
+          <span>movement systems</span>
+        </div>
+        <button class="text-button sign-out-button" type="button" data-logout>Sign out</button>
+      </header>
+      <main class="gateway-main">
+        <div class="gateway-heading">
+          <p class="eyebrow">Customer workspace</p>
+          <h1 id="gatewayTitle">How would you like to begin?</h1>
+          <p id="gatewayWelcome">Start a new customer record or retrieve an existing customer and purchase history.</p>
+        </div>
+        <div class="gateway-grid">
+          <button class="gateway-option" id="newCustomerButton" type="button">
+            <span class="option-icon" aria-hidden="true">+</span>
+            <span>
+              <strong>New customer</strong>
+              <small>Open a blank customer profile and begin product selection.</small>
+            </span>
+            <span class="option-arrow" aria-hidden="true">&rarr;</span>
+          </button>
+          <button class="gateway-option" id="lookupCustomerButton" type="button">
+            <span class="option-icon option-icon-search" aria-hidden="true"></span>
+            <span>
+              <strong>Lookup customer</strong>
+              <small>Find an existing customer and autofill their contact details.</small>
+            </span>
+            <span class="option-arrow" aria-hidden="true">&rarr;</span>
+          </button>
+        </div>
+        <form class="lookup-panel" id="lookupPanel" hidden>
+          <div>
+            <p class="eyebrow">Customer lookup</p>
+            <h2>Find an existing account</h2>
+            <p>Enter the exact company name or customer email stored on the account.</p>
+          </div>
+          <div class="lookup-fields">
+            <label for="lookupCompany">Company<input id="lookupCompany" type="text" autocomplete="organization"></label>
+            <span class="lookup-or">or</span>
+            <label for="lookupEmail">Email<input id="lookupEmail" type="email" autocomplete="email"></label>
+          </div>
+          <div class="lookup-actions">
+            <button class="secondary-button" id="cancelLookup" type="button">Cancel</button>
+            <button class="primary-button" type="submit">Find customer</button>
+          </div>
+          <div class="lookup-status" id="lookupStatus" aria-live="polite"></div>
+        </form>
+      </main>
+    </section>
+
+    <div class="app-shell" id="appShell" hidden>
+    <header class="topbar">
+      <div class="topbar-brand">
+        <div class="brand-lockup brand-lockup-dark">
+          <span class="brand-mark">forbo</span>
+          <span>movement systems</span>
+        </div>
+        <div class="topbar-title">
+          <p class="eyebrow">Siegling Prolink sales portal</p>
+          <h1>Product &amp; Quote Workspace</h1>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="rep-chip">
+          <span class="rep-avatar" id="repAvatar">SR</span>
+          <span><strong id="repName">Sales representative</strong><small id="repEmail"></small></span>
+        </div>
+        <button class="text-button" type="button" data-logout>Sign out</button>
+        <button class="icon-button menu-button" id="sidebarToggle" title="Toggle consultation panel" aria-label="Toggle consultation panel"><span></span><span></span><span></span></button>
+        <button class="icon-button" id="resetButton" title="Reset selector" aria-label="Reset selector">↺</button>
+      </div>
+    </header>
+
+    <main class="workspace" id="mainWorkspace">
+      <aside class="consult-panel" aria-label="Customer requirements">
+        <section class="series-block sidebar-section is-open">
+          <button class="sidebar-section-toggle" type="button" aria-expanded="true">
+            <span>Belt series</span>
+            <span class="chevron"></span>
+          </button>
+          <div class="sidebar-section-body">
+          <label for="seriesSelect">Belt series</label>
+          <select id="seriesSelect"></select>
+          <p class="small-note" id="seriesSummary"></p>
+          </div>
+        </section>
+
+        <section class="customer-block sidebar-section is-open">
+          <button class="sidebar-section-toggle" type="button" aria-expanded="true">
+            <span>Customer</span>
+            <span class="chevron"></span>
+          </button>
+          <div class="sidebar-section-body">
+          <label for="customerCompany">Company</label>
+          <input id="customerCompany" type="text" placeholder="Company name">
+          <label for="customerRep">Customer rep</label>
+          <input id="customerRep" type="text" placeholder="Contact name">
+          <label for="customerPhone">Phone number</label>
+          <input id="customerPhone" type="tel" placeholder="Phone">
+          <label for="customerEmail">Email</label>
+          <input id="customerEmail" type="email" placeholder="Email">
+          <label for="customerAddress">Address</label>
+          <textarea id="customerAddress" rows="3" placeholder="Street, city, state, ZIP"></textarea>
+          <label for="application">Application</label>
+          <input id="application" type="text" placeholder="Conveyor use case">
+          <button class="secondary-button" id="findCustomerButton" type="button">Find customer history</button>
+          <div class="customer-history" id="customerHistory" aria-live="polite">
+            <span class="small-note">Enter a company or email to review prior purchases.</span>
+          </div>
+          </div>
+        </section>
+
+        <section class="salesperson-block sidebar-section">
+          <button class="sidebar-section-toggle" type="button" aria-expanded="false">
+            <span>Salesperson</span>
+            <span class="chevron"></span>
+          </button>
+          <div class="sidebar-section-body">
+          <label for="salespersonName">Name</label>
+          <input id="salespersonName" type="text" placeholder="Salesperson name">
+          <label for="salespersonPhone">Phone number</label>
+          <input id="salespersonPhone" type="tel" placeholder="Phone">
+          <label for="salespersonEmail">Email</label>
+          <input id="salespersonEmail" type="email" placeholder="Email">
+          </div>
+        </section>
+
+        <section class="sidebar-section is-open">
+          <button class="sidebar-section-toggle" type="button" aria-expanded="true">
+            <span>Needs</span>
+            <span id="needCount">0 selected</span>
+            <span class="chevron"></span>
+          </button>
+          <div class="sidebar-section-body">
+          <div class="need-list" id="needList"></div>
+          </div>
+        </section>
+
+        <section class="sidebar-section is-open">
+          <button class="sidebar-section-toggle" type="button" aria-expanded="true">
+            <span>Selected</span>
+            <span id="selectionCount">0 items</span>
+            <span class="chevron"></span>
+          </button>
+          <div class="sidebar-section-body">
+          <div class="selection-list" id="selectionList"></div>
+          </div>
+        </section>
+
+        <section class="notes-block sidebar-section">
+          <button class="sidebar-section-toggle" type="button" aria-expanded="false">
+            <span>Sales notes</span>
+            <span class="chevron"></span>
+          </button>
+          <div class="sidebar-section-body">
+          <label for="notes">Sales notes</label>
+          <textarea id="notes" rows="6" placeholder="Record dimensions, product, temperature, washdown, and next steps."></textarea>
+          </div>
+        </section>
+
+        <section class="reference-block sidebar-section">
+          <button class="sidebar-section-toggle" type="button" aria-expanded="false">
+            <span>References</span>
+            <span class="chevron"></span>
+          </button>
+          <div class="sidebar-section-body">
+          <a href="siegling prolink product range.pdf" target="_blank" rel="noreferrer">Product range PDF</a>
+          <a href="forbo engineering manual.pdf" target="_blank" rel="noreferrer">Engineering manual PDF</a>
+          <a href="forbo_Ref.no.888-2_1.2_S6.1" target="_blank" rel="noreferrer">Series 6.1 excerpt</a>
+          </div>
+        </section>
+      </aside>
+
+      <section class="results-area">
+        <div class="summary-strip">
+          <div>
+            <p class="eyebrow" id="activeSeriesLabel">Series selector</p>
+            <h2 id="activeSeriesTitle">Match belt surfaces, accessories, and service parts to the customer problem.</h2>
+            <p class="summary-copy" id="activeSeriesCopy"></p>
+          </div>
+          <div class="quick-stats" id="quickStats"></div>
+        </div>
+
+        <div class="filter-row">
+          <label class="search-box" for="searchInput">
+            <span>Search</span>
+            <input id="searchInput" type="search" placeholder="FLT, sprocket, drainage, POM...">
+          </label>
+          <div class="segmented" id="categoryFilters" aria-label="Category filter"></div>
+        </div>
+
+        <div class="product-grid" id="productGrid"></div>
+
+        <section class="compare-zone">
+          <div class="section-heading">
+            <h2>Comparison</h2>
+            <span>Selected products</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Configuration</th>
+                  <th>Best fit</th>
+                  <th>Opening</th>
+                  <th>Materials</th>
+                  <th>Temperature</th>
+                  <th>Brochure</th>
+                </tr>
+              </thead>
+              <tbody id="compareBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <dialog id="productDialog">
+      <div class="dialog-shell">
+        <button class="icon-button close-button" id="closeDialog" title="Close" aria-label="Close">×</button>
+        <img id="dialogImage" alt="">
+        <div class="dialog-copy">
+          <p class="eyebrow" id="dialogCategory"></p>
+          <h2 id="dialogTitle"></h2>
+          <p id="dialogDescription"></p>
+          <dl id="dialogSpecs"></dl>
+          <a id="dialogPage" class="primary-button" target="_blank" rel="noreferrer">Open brochure page</a>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="configureDialog">
+      <form class="config-shell" id="configureForm" method="dialog">
+        <div class="config-head">
+          <div>
+            <p class="eyebrow" id="configCategory"></p>
+            <h2 id="configTitle"></h2>
+            <p id="configFit"></p>
+          </div>
+          <button class="icon-button" id="closeConfig" type="button" title="Close" aria-label="Close">×</button>
+        </div>
+
+        <div class="config-grid">
+          <label>
+            Material
+            <select id="configMaterial" required></select>
+          </label>
+          <label>
+            Color
+            <select id="configColor" required></select>
+          </label>
+          <label>
+            Belt width
+            <input id="configWidth" type="text" placeholder="Example: 400 mm">
+          </label>
+          <label>
+            Belt length
+            <input id="configLength" type="text" placeholder="Example: 12 ft">
+          </label>
+          <label id="configHeightWrap">
+            Height / size
+            <select id="configHeight"></select>
+          </label>
+          <label>
+            Quantity
+            <input id="configQuantity" type="number" min="1" step="1" value="1">
+          </label>
+        </div>
+
+        <label class="config-notes">
+          Line item notes
+          <textarea id="configNotes" rows="4" placeholder="Capture product contact, washdown, temperature, sprocket bore, or customer preference."></textarea>
+        </label>
+
+        <div class="config-actions">
+          <button class="secondary-button" id="cancelConfig" type="button">Cancel</button>
+          <button class="primary-button" id="confirmConfig" type="submit">Add configured item</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="bottom-action-bar">
+      <button class="secondary-button" id="printButton">Print Quote</button>
+      <button class="primary-button" id="createQuoteAppButton">Configure Advanced Quote</button>
+    </div>
+
+    <dialog id="quoteAppDialog">
+      <div class="quote-app-shell">
+        <div class="config-head">
+          <div>
+            <p class="eyebrow">Excel quote workflow</p>
+            <h2>Fullsan quote app</h2>
+            <p>Build a quote packet from the selected products, customer details, and workbook-derived quote fields.</p>
+          </div>
+          <button class="icon-button" id="closeQuoteApp" type="button" title="Close" aria-label="Close">×</button>
+        </div>
+
+        <div class="quote-app-grid">
+          <section>
+            <div class="section-heading">
+              <h3>Customer</h3>
+            </div>
+            <div class="quote-summary" id="quoteCustomerSummary"></div>
+          </section>
+
+          <section>
+            <div class="section-heading">
+              <h3>Salesperson</h3>
+            </div>
+            <div class="quote-summary" id="quoteSalesSummary"></div>
+          </section>
+
+          <section class="wide">
+            <div class="section-heading">
+              <h3>Configured products</h3>
+            </div>
+            <div class="quote-lines" id="quoteProductLines"></div>
+          </section>
+
+          <section>
+            <div class="section-heading">
+              <h3>Quote details</h3>
+            </div>
+            <label>Customer number<input id="quoteCustomerNumber" type="text"></label>
+            <label>Project / quote name<input id="quoteProject" type="text"></label>
+            <label>Requested date<input id="quoteDate" type="date"></label>
+            <label>Desired delivery<input id="quoteDelivery" type="text" placeholder="Timing or date"></label>
+          </section>
+
+          <section>
+            <div class="section-heading">
+              <h3>Belt dimensions</h3>
+            </div>
+            <label>Belt width<input id="quoteBeltWidth" type="text" placeholder="Example: 400 mm"></label>
+            <label>Belt length<input id="quoteBeltLength" type="text" placeholder="Example: 12 ft"></label>
+            <label>Length adjustment<input id="quoteLengthAdjustment" type="text" placeholder="Excel BeltLenAdj"></label>
+            <label>Quantity<input id="quoteQuantity" type="number" min="1" step="1" value="1"></label>
+          </section>
+
+          <section>
+            <div class="section-heading">
+              <h3>Fabrication</h3>
+            </div>
+            <label>Cleats / flights<select id="quoteCleats"><option>No</option><option>Yes</option><option>Modified / split</option></select></label>
+            <label>Cleat height<input id="quoteCleatHeight" type="text"></label>
+            <label>Sidewalls<select id="quoteSidewalls"><option>No</option><option>Yes</option></select></label>
+            <label>Sidewall height<input id="quoteSidewallHeight" type="text"></label>
+          </section>
+
+          <section>
+            <div class="section-heading">
+              <h3>Guides and drive</h3>
+            </div>
+            <label>Top guides<select id="quoteTopGuides"><option>No</option><option>Yes</option></select></label>
+            <label>Bottom guides<select id="quoteBottomGuides"><option>No</option><option>Yes</option></select></label>
+            <label>Guide spacing<input id="quoteGuideSpacing" type="text"></label>
+            <label>Sprockets<input id="quoteSprockets" type="text" placeholder="Qty, bore, size"></label>
+          </section>
+
+          <section class="wide">
+            <div class="section-heading">
+              <h3>Pull-force inputs</h3>
+            </div>
+            <div class="quote-mini-grid">
+              <label>Conveyor type<select id="quoteConveyorType"><option>Straight</option><option>Incline</option><option>Decline</option><option>Radius / spiral</option></select></label>
+              <label>Conveyor length<input id="quoteConveyorLength" type="text"></label>
+              <label>Conveyor speed<input id="quoteConveyorSpeed" type="text"></label>
+              <label>Product load<input id="quoteProductLoad" type="text"></label>
+              <label>Incline angle<input id="quoteInclineAngle" type="text"></label>
+              <label>Environment<input id="quoteEnvironment" type="text" placeholder="Dry, wet, washdown"></label>
+              <label>Friction coefficient<input id="quoteFriction" type="number" min="0.03" max="1" step="0.01" value="0.2"></label>
+              <label>Belt weight<input id="quoteBeltWeight" type="text" placeholder="kg/m2"></label>
+              <label>Allowable pull<input id="quoteAllowablePull" type="text" placeholder="N/mm"></label>
+            </div>
+            <div class="calc-result" id="quoteCalcResult">
+              <span>Excel-derived calculation ready.</span>
+            </div>
+            <button class="secondary-button" id="runQuoteCalc" type="button">Run pull-force estimate</button>
+          </section>
+
+          <section class="wide">
+            <div class="section-heading">
+              <h3>Quote notes</h3>
+            </div>
+            <textarea id="quoteAppNotes" rows="5" placeholder="Add fabrication, pull-force, drawing, tolerance, or customer instructions."></textarea>
+          </section>
+        </div>
+
+        <div class="config-actions">
+          <input id="quoteImportFile" type="file" accept="application/json,.json" hidden>
+          <button class="secondary-button" id="importQuoteJson" type="button">Import quote data</button>
+          <button class="secondary-button" id="downloadQuoteJson" type="button">Download quote data</button>
+          <button class="secondary-button" id="printQuoteApp" type="button">Print</button>
+          <button class="primary-button" id="savePurchase" type="button">Save Customer Purchase</button>
+          <button class="primary-button" id="closeQuoteAppDone" type="button">Done</button>
+        </div>
+        <div class="database-status" id="databaseStatus" aria-live="polite"></div>
+      </div>
+    </dialog>
+
+    <section id="quotePrintSheet" class="quote-print-sheet" aria-hidden="true"></section>
+
+    </div>
+    <script src="engineering-data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
