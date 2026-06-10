@@ -1351,7 +1351,8 @@ function applySalesRep(rep) {
   setFieldValue("salespersonPhone", rep.phone);
   setFieldValue("salespersonEmail", rep.email);
   document.querySelector("#repName").textContent = rep.name;
-  document.querySelector("#repEmail").textContent = rep.email;
+  const roleLabel = rep.role === "master-admin" ? "Master admin" : "Sales representative";
+  document.querySelector("#repEmail").textContent = `${roleLabel} · ${rep.email}`;
   document.querySelector("#repAvatar").textContent = rep.name
     .split(/\s+/)
     .map((part) => part[0])

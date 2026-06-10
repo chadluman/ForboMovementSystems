@@ -104,10 +104,12 @@ PORT=3000
 NODE_ENV=development
 SESSION_SECRET=replace-with-at-least-32-random-characters
 SESSION_HOURS=8
-SALES_REPS_JSON=[{"name":"Jordan Lee","email":"jordan.lee@example.com","phone":"+1 555 010 1000","password":"replace-this-password"}]
+SALES_REPS_JSON=[{"name":"Master Administrator","email":"admin@example.com","phone":"","role":"master-admin","password":"replace-this-password"},{"name":"Jordan Lee","email":"jordan.lee@example.com","phone":"+1 555 010 1000","role":"sales-representative","password":"replace-this-password"}]
 ```
 
 `SALES_REPS_JSON` must remain valid JSON on one line.
+Supported roles are `master-admin` and `sales-representative`. Credentials belong
+in `.env`; never place real passwords in `.env.example` or commit them to Git.
 
 ### Local Demo Login
 

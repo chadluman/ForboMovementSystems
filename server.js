@@ -15,7 +15,12 @@ const loginAttempts = new Map();
 function configuredSalesReps() {
   try {
     const reps = JSON.parse(process.env.SALES_REPS_JSON || "[]");
-    if (Array.isArray(reps) && reps.length) return reps;
+    if (Array.isArray(reps) && reps.length) {
+      return reps.map((rep) => ({
+        ...rep,
+        role: rep.role || "sales-representative"
+      }));
+    }
   } catch (error) {
     console.error(`SALES_REPS_JSON could not be parsed: ${error.message}`);
   }
@@ -25,6 +30,7 @@ function configuredSalesReps() {
       name: "Demo Sales Representative",
       email: "sales@forbo.local",
       phone: "+1 704 948 0800",
+      role: "sales-representative",
       password: "ForboDemo123!"
     }];
   }
@@ -129,6 +135,7 @@ function signSession(rep) {
     name: rep.name,
     email: rep.email,
     phone: rep.phone || "",
+    role: rep.role || "sales-representative",
     exp: Date.now() + sessionHours * 60 * 60 * 1000
   })).toString("base64url");
   const signature = crypto.createHmac("sha256", sessionSecret).update(payload).digest("base64url");
@@ -185,7 +192,14 @@ app.post("/api/auth/login", (req, res) => {
     maxAge: sessionHours * 60 * 60 * 1000,
     path: "/"
   });
-  res.json({ rep: { name: rep.name, email: rep.email, phone: rep.phone || "" } });
+  res.json({
+    rep: {
+      name: rep.name,
+      email: rep.email,
+      phone: rep.phone || "",
+      role: rep.role || "sales-representative"
+    }
+  });
 });
 
 app.get("/api/auth/me", requireAuth, (req, res) => {
