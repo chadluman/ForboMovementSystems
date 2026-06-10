@@ -75,6 +75,10 @@ No frontend build step is required.
 
 6. Open `http://localhost:3000`.
 
+Always open the application through `http://localhost:3000`. VS Code Live
+Server and other static preview extensions cannot serve the authentication API
+and will return `404` or `405` during login.
+
 For automatic server restarts while editing:
 
 ```powershell
@@ -234,6 +238,13 @@ Set a valid `SALES_REPS_JSON` value. Production mode intentionally refuses to st
 ### Login works locally but not after deployment
 
 Confirm the site uses HTTPS, `NODE_ENV=production`, `SESSION_SECRET` is set, and the browser accepts the secure cookie.
+
+### Login returns 404 or 405
+
+The page is being served by an old Node process or a static preview server.
+Stop and restart the backend with `npm start`, then open
+`http://localhost:3000` rather than a Live Server URL such as
+`http://localhost:5500`.
 
 ### Customer lookup returns no result
 

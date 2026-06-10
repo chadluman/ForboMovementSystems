@@ -1248,7 +1248,14 @@ async function apiRequest(url, options = {}) {
     ...options
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload.error || `Request failed (${response.status}).`);
+  if (!response.ok) {
+    if ([404, 405].includes(response.status) && url.startsWith("/api/")) {
+      throw new Error(
+        "The backend API is not available on this address. Start the app with npm start and open http://localhost:3000."
+      );
+    }
+    throw new Error(payload.error || `Request failed (${response.status}).`);
+  }
   return payload;
 }
 
