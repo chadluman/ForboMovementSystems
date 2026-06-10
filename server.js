@@ -72,6 +72,7 @@ const customerSchema = new mongoose.Schema({
   address: String,
   application: String,
   customerNumber: String,
+  lastQuoteAt: Date,
   lastPurchaseAt: Date
 }, { timestamps: true });
 
@@ -79,6 +80,9 @@ customerSchema.index({ normalizedCompany: 1, email: 1 });
 
 const purchaseSchema = new mongoose.Schema({
   customer: { type: mongoose.Schema.Types.ObjectId, ref: "Customer", required: true, index: true },
+  recordType: { type: String, enum: ["quote", "purchase"], default: "quote", index: true },
+  status: { type: String, default: "draft", index: true },
+  quoteNumber: { type: String, index: true },
   salesperson: {
     name: String,
     phone: String,
@@ -103,6 +107,16 @@ const purchaseSchema = new mongoose.Schema({
 const Product = mongoose.model("Product", productSchema);
 const Customer = mongoose.model("Customer", customerSchema);
 const Purchase = mongoose.model("Purchase", purchaseSchema);
+
+function createQuoteNumber() {
+  const date = new Date();
+  const stamp = [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0")
+  ].join("");
+  return `Q-${stamp}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+}
 
 function databaseReady(req, res, next) {
   if (mongoose.connection.readyState === 1) return next();
@@ -295,7 +309,7 @@ app.get("/api/customers/search", requireAuth, databaseReady, async (req, res, ne
   }
 });
 
-app.post("/api/purchases", requireAuth, databaseReady, async (req, res, next) => {
+async function saveCustomerQuote(req, res, next) {
   try {
     const data = req.body;
     const company = String(data.customer?.company || "").trim();
@@ -312,6 +326,7 @@ app.post("/api/purchases", requireAuth, databaseReady, async (req, res, next) =>
       customer = new Customer({ company, normalizedCompany, email });
     }
 
+    const recordType = data.recordType === "purchase" ? "purchase" : "quote";
     Object.assign(customer, {
       company,
       normalizedCompany,
@@ -320,13 +335,17 @@ app.post("/api/purchases", requireAuth, databaseReady, async (req, res, next) =>
       email,
       address: data.customer.address,
       application: data.customer.application,
-      customerNumber: data.customer.number,
-      lastPurchaseAt: new Date()
+      customerNumber: data.customer.number
     });
+    if (recordType === "purchase") customer.lastPurchaseAt = new Date();
+    else customer.lastQuoteAt = new Date();
     await customer.save();
 
     const purchase = await Purchase.create({
       customer: customer._id,
+      recordType,
+      status: String(data.status || "draft"),
+      quoteNumber: createQuoteNumber(),
       salesperson: {
         name: req.salesRep.name,
         phone: req.salesRep.phone,
@@ -343,11 +362,23 @@ app.post("/api/purchases", requireAuth, databaseReady, async (req, res, next) =>
     res.status(201).json({
       customerId: customer._id,
       purchaseId: purchase._id,
+      quoteId: purchase._id,
+      quoteNumber: purchase.quoteNumber,
+      status: purchase.status,
       savedAt: purchase.createdAt
     });
   } catch (error) {
     next(error);
   }
+}
+
+app.post("/api/quotes", requireAuth, databaseReady, (req, res, next) => {
+  req.body.recordType = "quote";
+  saveCustomerQuote(req, res, next);
+});
+app.post("/api/purchases", requireAuth, databaseReady, (req, res, next) => {
+  req.body.recordType = "purchase";
+  saveCustomerQuote(req, res, next);
 });
 
 app.use(express.static(__dirname));

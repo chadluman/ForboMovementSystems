@@ -1297,7 +1297,7 @@ async function findCustomerHistory() {
   try {
     const data = await apiRequest(`/api/customers/search?${params}`);
     if (!data.customer) {
-      history.innerHTML = `<span class="small-note">No prior customer or purchase history found.</span>`;
+      history.innerHTML = `<span class="small-note">No prior customer or quote history found.</span>`;
       return;
     }
 
@@ -1307,11 +1307,12 @@ async function findCustomerHistory() {
       <div class="history-card">
         <strong>${escapeHtml(data.customer.company)}</strong>
         <span>${escapeHtml(data.customer.rep || data.customer.email || "Customer record")}</span>
-        <span>${purchases.length} saved purchase${purchases.length === 1 ? "" : "s"}</span>
+        <span>${purchases.length} saved quote${purchases.length === 1 ? "" : "s"}</span>
       </div>
       ${purchases.slice(0, 5).map((purchase) => `
         <div class="history-card">
-          <strong>${escapeHtml(purchase.project || "Saved quote")}</strong>
+          <strong>${escapeHtml(purchase.quoteNumber ? `${purchase.quoteNumber} · ${purchase.project || "Saved quote"}` : purchase.project || "Saved quote")}</strong>
+          <span>${escapeHtml(purchase.status || "draft")} quote</span>
           <span>${purchaseDate(purchase.createdAt)} · ${purchase.products?.length || 0} product line${purchase.products?.length === 1 ? "" : "s"}</span>
           <span>${escapeHtml((purchase.products || []).map((item) => item.product).join(", ") || "No product names stored")}</span>
         </div>
@@ -1429,23 +1430,26 @@ async function lookupCustomer(event) {
       return;
     }
     fillCustomerFields(data.customer);
-    status.innerHTML = `<div class="lookup-result"><strong>${escapeHtml(data.customer.company)}</strong><span>${escapeHtml(data.customer.rep || data.customer.email || "Customer record")}</span><span>${data.purchases.length} saved purchase${data.purchases.length === 1 ? "" : "s"}</span><button class="primary-button" id="continueCustomer" type="button">Continue with customer</button></div>`;
+    status.innerHTML = `<div class="lookup-result"><strong>${escapeHtml(data.customer.company)}</strong><span>${escapeHtml(data.customer.rep || data.customer.email || "Customer record")}</span><span>${data.purchases.length} saved quote${data.purchases.length === 1 ? "" : "s"}</span><button class="primary-button" id="continueCustomer" type="button">Continue with customer</button></div>`;
     document.querySelector("#continueCustomer").addEventListener("click", openWorkspace, { once: true });
   } catch (error) {
     status.innerHTML = `<div class="lookup-message is-error">${escapeHtml(error.message)}</div>`;
   }
 }
 
-async function saveCustomerPurchase() {
-  const button = document.querySelector("#savePurchase");
+async function saveCustomerQuote() {
+  const button = document.querySelector("#saveQuote");
   button.disabled = true;
-  setDatabaseStatus("Saving customer and purchase...");
+  setDatabaseStatus("Saving quote to customer record...");
   try {
-    const result = await apiRequest("/api/purchases", {
+    const data = collectQuoteAppData();
+    data.recordType = "quote";
+    data.status = "draft";
+    const result = await apiRequest("/api/quotes", {
       method: "POST",
-      body: JSON.stringify(collectQuoteAppData())
+      body: JSON.stringify(data)
     });
-    setDatabaseStatus(`Purchase saved ${purchaseDate(result.savedAt)}.`);
+    setDatabaseStatus(`Quote ${result.quoteNumber} saved to customer ${purchaseDate(result.savedAt)}.`);
     await findCustomerHistory();
   } catch (error) {
     setDatabaseStatus(error.message, true);
@@ -1874,7 +1878,7 @@ document.querySelector("#findCustomerButton").addEventListener("click", findCust
 document.querySelector("#closeQuoteApp").addEventListener("click", () => quoteAppDialog.close());
 document.querySelector("#closeQuoteAppDone").addEventListener("click", () => quoteAppDialog.close());
 document.querySelector("#printQuoteApp").addEventListener("click", printQuoteAppSheet);
-document.querySelector("#savePurchase").addEventListener("click", saveCustomerPurchase);
+document.querySelector("#saveQuote").addEventListener("click", saveCustomerQuote);
 document.querySelector("#downloadQuoteJson").addEventListener("click", downloadQuoteData);
 document.querySelector("#importQuoteJson").addEventListener("click", () => document.querySelector("#quoteImportFile").click());
 document.querySelector("#quoteImportFile").addEventListener("change", (event) => {

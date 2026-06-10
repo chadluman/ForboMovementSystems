@@ -16,7 +16,7 @@ The portal gives a sales representative one place to:
 - Browse and compare Siegling Prolink product series.
 - Configure products, dimensions, materials, colors, quantities, and notes.
 - Prepare Fullsan quote data and run a pull-force estimate.
-- Save purchases to MongoDB.
+- Save draft quotes to the customer's MongoDB record.
 - Print or export a quote packet as JSON.
 - Open the included product-range and engineering reference files.
 
@@ -152,7 +152,7 @@ A successful lookup fills:
 - Application
 - Customer number
 
-The workspace also displays up to 20 recent purchases, with the five newest summarized in the customer panel.
+The workspace also displays up to 20 recent quotes, with the five newest summarized in the customer panel.
 
 ## Data Model
 
@@ -162,11 +162,11 @@ Catalog products include series, category, application fit, materials, temperatu
 
 ### Customers
 
-Customers include company and normalized company names, contact information, address, application, customer number, and latest purchase date.
+Customers include company and normalized company names, contact information, address, application, customer number, latest quote date, and latest purchase date.
 
-### Purchases
+### Quotes
 
-Purchases link a customer to the authenticated salesperson, project information, requested delivery details, configured products, quote fields, and source workbook.
+Quotes link a customer to the authenticated salesperson, project information, requested delivery details, configured products, quote fields, source workbook, draft status, and generated quote number.
 
 ## API Summary
 
@@ -178,8 +178,9 @@ Purchases link a customer to the authenticated salesperson, project information,
 | `GET` | `/api/health` | Report server and database status. |
 | `GET` | `/api/products` | Return synchronized products. |
 | `POST` | `/api/products/sync` | Synchronize the bundled catalog. |
-| `GET` | `/api/customers/search` | Find a customer and recent purchases. |
-| `POST` | `/api/purchases` | Create or update a customer and save a purchase. |
+| `GET` | `/api/customers/search` | Find a customer and recent quotes or purchases. |
+| `POST` | `/api/quotes` | Save a draft quote to a customer record. |
+| `POST` | `/api/purchases` | Compatibility endpoint for saving a completed purchase. |
 
 Except for health and authentication endpoints, API routes require a valid session.
 
