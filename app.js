@@ -1376,7 +1376,8 @@ async function initializePortal() {
 
 async function login(event) {
   event.preventDefault();
-  const button = event.currentTarget.querySelector('button[type="submit"]');
+  const form = event.currentTarget;
+  const button = form.querySelector('button[type="submit"]');
   const status = document.querySelector("#loginStatus");
   button.disabled = true;
   status.textContent = "Signing in...";
@@ -1389,7 +1390,7 @@ async function login(event) {
       })
     });
     applySalesRep(data.rep);
-    event.currentTarget.reset();
+    form.reset();
     status.textContent = "";
     showPortalScreen("gateway");
     await syncProductCatalog();
