@@ -87,14 +87,14 @@ npm run dev
 
 ## Environment Variables
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| `MONGODB_URI` | Production | MongoDB connection string. Defaults to `mongodb://127.0.0.1:27017/forbo_product` locally. |
-| `PORT` | No | HTTP port. Defaults to `3000`. |
-| `NODE_ENV` | Production | Set to `production` in a deployed environment. |
-| `SESSION_SECRET` | Production | Long random value used to sign session cookies. |
-| `SESSION_HOURS` | No | Session lifetime in hours. Defaults to `8`. |
-| `SALES_REPS_JSON` | Production | JSON array of authorized representative records. |
+| Variable          | Required   | Description                                                                               |
+| ----------------- | ---------- | ----------------------------------------------------------------------------------------- |
+| `MONGODB_URI`     | Production | MongoDB connection string. Defaults to `mongodb://127.0.0.1:27017/forbo_product` locally. |
+| `PORT`            | No         | HTTP port. Defaults to `3000`.                                                            |
+| `NODE_ENV`        | Production | Set to `production` in a deployed environment.                                            |
+| `SESSION_SECRET`  | Production | Long random value used to sign session cookies.                                           |
+| `SESSION_HOURS`   | No         | Session lifetime in hours. Defaults to `8`.                                               |
+| `SALES_REPS_JSON` | Production | JSON array of authorized representative records.                                          |
 
 Example:
 
@@ -170,17 +170,17 @@ Quotes link a customer to the authenticated salesperson, project information, re
 
 ## API Summary
 
-| Method | Route | Purpose |
-| --- | --- | --- |
-| `POST` | `/api/auth/login` | Authenticate a sales representative. |
-| `GET` | `/api/auth/me` | Restore the current session. |
-| `POST` | `/api/auth/logout` | Clear the current session. |
-| `GET` | `/api/health` | Report server and database status. |
-| `GET` | `/api/products` | Return synchronized products. |
-| `POST` | `/api/products/sync` | Synchronize the bundled catalog. |
-| `GET` | `/api/customers/search` | Find a customer and recent quotes or purchases. |
-| `POST` | `/api/quotes` | Save a draft quote to a customer record. |
-| `POST` | `/api/purchases` | Compatibility endpoint for saving a completed purchase. |
+| Method | Route                   | Purpose                                                 |
+| ------ | ----------------------- | ------------------------------------------------------- |
+| `POST` | `/api/auth/login`       | Authenticate a sales representative.                    |
+| `GET`  | `/api/auth/me`          | Restore the current session.                            |
+| `POST` | `/api/auth/logout`      | Clear the current session.                              |
+| `GET`  | `/api/health`           | Report server and database status.                      |
+| `GET`  | `/api/products`         | Return synchronized products.                           |
+| `POST` | `/api/products/sync`    | Synchronize the bundled catalog.                        |
+| `GET`  | `/api/customers/search` | Find a customer and recent quotes or purchases.         |
+| `POST` | `/api/quotes`           | Save a draft quote to a customer record.                |
+| `POST` | `/api/purchases`        | Compatibility endpoint for saving a completed purchase. |
 
 Except for health and authentication endpoints, API routes require a valid session.
 
