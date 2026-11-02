@@ -132,6 +132,10 @@
 
     <main class="workspace" id="mainWorkspace">
       <aside class="consult-panel" aria-label="Customer requirements">
+        <div class="field-panel-actions">
+          <strong>Field steps</strong>
+          <button class="secondary-button" id="closeSidebarButton" type="button">Show products &rarr;</button>
+        </div>
         <section class="series-block sidebar-section is-open">
           <button class="sidebar-section-toggle" type="button" aria-expanded="true">
             <span>Belt series</span>
@@ -231,6 +235,15 @@
       </aside>
 
       <section class="results-area">
+        <nav class="field-steps" aria-label="Field steps">
+          <ol>
+            <li><button type="button" data-field-step="customer"><span class="field-step-number">1</span><strong>Customer &amp; needs</strong><small id="fieldStepCustomer">Add a customer</small></button></li>
+            <li><button type="button" data-field-step="products"><span class="field-step-number">2</span><strong>Products</strong><small id="fieldStepProducts">Browse matches</small></button></li>
+            <li><button type="button" data-field-step="selected"><span class="field-step-number">3</span><strong>Selected</strong><small id="fieldStepSelected">0 items</small></button></li>
+            <li><button type="button" data-field-step="billing"><span class="field-step-number">4</span><strong>Send to billing</strong><small id="fieldStepBilling">Review &amp; export</small></button></li>
+          </ol>
+          <p class="field-steps-hint">Tap a step to jump there. The full desktop workspace is unchanged.</p>
+        </nav>
         <div class="summary-strip">
           <div>
             <p class="eyebrow" id="activeSeriesLabel">Series selector</p>
@@ -341,6 +354,7 @@
 
     <div class="bottom-action-bar">
       <button class="secondary-button" id="printButton">Print Quote</button>
+      <button class="primary-button field-only" id="sendToBillingButton" type="button">Send to billing</button>
       <button class="primary-button" id="createQuoteAppButton">Configure Advanced Quote</button>
     </div>
 
@@ -446,10 +460,13 @@
           </section>
         </div>
 
+        <p class="small-note billing-note">For billing: the CSV file opens in Excel. Save as PDF uses your device's Print &rarr; Save as PDF, with the same billing-ready quote sheet.</p>
         <div class="config-actions">
           <input id="quoteImportFile" type="file" accept="application/json,.json" hidden>
           <button class="secondary-button" id="importQuoteJson" type="button">Import quote data</button>
           <button class="secondary-button" id="downloadQuoteJson" type="button">Download quote data</button>
+          <button class="secondary-button" id="downloadQuoteCsv" type="button">Download Excel (CSV)</button>
+          <button class="secondary-button" id="downloadQuotePdf" type="button">Save as PDF</button>
           <button class="secondary-button" id="printQuoteApp" type="button">Print</button>
           <button class="primary-button" id="saveQuote" type="button">Save Quote to Customer</button>
           <button class="primary-button" id="closeQuoteAppDone" type="button">Done</button>
