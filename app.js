@@ -1621,6 +1621,114 @@ function downloadQuoteData() {
   URL.revokeObjectURL(url);
 }
 
+function quoteFileSlug(data) {
+  return (data.customer.company || data.quote.project || "forbo-quote").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "forbo-quote";
+}
+
+function csvCell(value) {
+  return `"${String(value ?? "-").replace(/"/g, '""').replace(/\r?\n/g, " ")}"`;
+}
+
+function downloadQuoteCsv() {
+  const data = collectQuoteAppData();
+  const rows = [
+    ["Forbo Movement Systems — Quote for billing"],
+    ["Export date", new Date().toISOString().slice(0, 10)],
+    [],
+    ["Customer"],
+    ["Company", data.customer.company],
+    ["Customer rep", data.customer.rep],
+    ["Phone", data.customer.phone],
+    ["Email", data.customer.email],
+    ["Address", data.customer.address],
+    ["Application", data.customer.application],
+    ["Customer number", data.customer.number],
+    [],
+    ["Salesperson"],
+    ["Name", data.salesperson.name],
+    ["Phone", data.salesperson.phone],
+    ["Email", data.salesperson.email],
+    [],
+    ["Quote"],
+    ["Project / quote name", data.quote.project],
+    ["Requested date", data.quote.requestedDate],
+    ["Desired delivery", data.quote.desiredDelivery],
+    ["Belt width", data.quote.beltWidth],
+    ["Belt length", data.quote.beltLength],
+    ["Length adjustment", data.quote.lengthAdjustment],
+    ["Quantity", data.quote.quantity],
+    ["Cleats / flights", data.quote.cleats],
+    ["Cleat height", data.quote.cleatHeight],
+    ["Sidewalls", data.quote.sidewalls],
+    ["Sidewall height", data.quote.sidewallHeight],
+    ["Top guides", data.quote.topGuides],
+    ["Bottom guides", data.quote.bottomGuides],
+    ["Guide spacing", data.quote.guideSpacing],
+    ["Sprockets", data.quote.sprockets],
+    [],
+    ["Configured products"],
+    ["Product", "Category", "Configuration", "Notes", "Source"],
+    ...(data.configuredProducts.length
+      ? data.configuredProducts.map((line) => [line.product, line.category, line.configuration, line.notes, line.source])
+      : [["No configured products selected.", "", "", "", ""]]),
+    [],
+    ["Pull-force estimate"],
+    ["Status", data.quote.calculation?.outputs?.status],
+    ["Effective pull (N)", data.quote.calculation?.outputs?.effectivePullN],
+    ["Pull per belt width (N/mm)", data.quote.calculation?.outputs?.pullPerWidthNPerMm],
+    ["Missing inputs", (data.quote.calculation?.outputs?.missingInputs || []).join("; ")],
+    [],
+    ["Quote notes"],
+    [data.quote.notes]
+  ];
+  const csv = "\ufeff" + rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${quoteFileSlug(data)}-quote-billing.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function updateFieldSteps() {
+  const customer = document.querySelector("#fieldStepCustomer");
+  const products = document.querySelector("#fieldStepProducts");
+  const selected = document.querySelector("#fieldStepSelected");
+  if (!customer || !products || !selected) return;
+  const hasCustomer = Boolean(fieldValue("customerCompany") || fieldValue("application"));
+  customer.textContent = hasCustomer ? "Customer started" : "Add a customer";
+  products.textContent = selectedNeeds.size ? `${selectedNeeds.size} need${selectedNeeds.size === 1 ? "" : "s"} selected` : "Browse matches";
+  selected.textContent = `${selectedConfigurations.length} item${selectedConfigurations.length === 1 ? "" : "s"}`;
+  document.querySelectorAll("[data-field-step]").forEach((button) => {
+    const done = button.dataset.fieldStep === "customer" ? hasCustomer
+      : button.dataset.fieldStep === "products" ? selectedNeeds.size > 0
+      : button.dataset.fieldStep === "selected" ? selectedConfigurations.length > 0
+      : selectedConfigurations.length > 0;
+    button.classList.toggle("is-done", done);
+  });
+}
+
+function goToFieldStep(step) {
+  const isMobile = window.matchMedia("(max-width: 980px)").matches;
+  const openSidebarSection = (selector) => {
+    if (isMobile) document.body.classList.add("sidebar-open");
+    else document.body.classList.remove("sidebar-collapsed");
+    const section = document.querySelector(selector)?.closest(".sidebar-section");
+    if (section) {
+      section.classList.add("is-open");
+      section.querySelector(".sidebar-section-toggle")?.setAttribute("aria-expanded", "true");
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+  if (step === "customer") openSidebarSection(".customer-block");
+  else if (step === "products") {
+    document.body.classList.remove("sidebar-open");
+    document.querySelector("#productGrid")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  } else if (step === "selected") openSidebarSection("#selectionList");
+  else if (step === "billing") openQuoteApp();
+}
+
 function applyImportedQuoteData(data) {
   if (!data || typeof data !== "object") throw new Error("Quote data was not readable.");
 
@@ -1857,6 +1965,7 @@ function render() {
   renderProducts();
   renderSelection();
   renderStats();
+  updateFieldSteps();
 }
 
 seriesSelect.addEventListener("change", () => {
@@ -1880,6 +1989,19 @@ document.querySelector("#closeQuoteAppDone").addEventListener("click", () => quo
 document.querySelector("#printQuoteApp").addEventListener("click", printQuoteAppSheet);
 document.querySelector("#saveQuote").addEventListener("click", saveCustomerQuote);
 document.querySelector("#downloadQuoteJson").addEventListener("click", downloadQuoteData);
+document.querySelector("#downloadQuoteCsv").addEventListener("click", downloadQuoteCsv);
+document.querySelector("#downloadQuotePdf").addEventListener("click", printQuoteAppSheet);
+document.querySelector("#sendToBillingButton").addEventListener("click", openQuoteApp);
+document.querySelector("#closeSidebarButton").addEventListener("click", () => {
+  document.body.classList.remove("sidebar-open");
+  document.querySelector("#productGrid")?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+document.querySelectorAll("[data-field-step]").forEach((button) => {
+  button.addEventListener("click", () => goToFieldStep(button.dataset.fieldStep));
+});
+["customerCompany", "application"].forEach((id) => {
+  document.querySelector(`#${id}`)?.addEventListener("input", updateFieldSteps);
+});
 document.querySelector("#importQuoteJson").addEventListener("click", () => document.querySelector("#quoteImportFile").click());
 document.querySelector("#quoteImportFile").addEventListener("change", (event) => {
   importQuoteDataFile(event.target.files[0]);
