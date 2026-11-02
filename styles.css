@@ -1189,6 +1189,17 @@ dialog::backdrop {
   display: none;
 }
 
+/* Field navigation: hidden on desktop, so the full workspace is unchanged there. */
+.field-steps,
+.field-panel-actions,
+.field-only {
+  display: none;
+}
+
+.billing-note {
+  margin: 0 0 12px;
+}
+
 .config-grid label,
 .config-notes {
   display: grid;
@@ -1294,6 +1305,83 @@ dd {
   .summary-strip,
   .dialog-shell {
     grid-template-columns: 1fr;
+  }
+
+  .field-steps {
+    display: block;
+    margin-bottom: 16px;
+  }
+
+  .field-steps ol {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .field-steps button {
+    width: 100%;
+    min-height: 76px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .field-steps button.is-done {
+    border-color: #b9d9c3;
+    background: #f0faf3;
+  }
+
+  .field-step-number {
+    display: inline-grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: var(--red);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .field-steps button strong,
+  .field-steps button small {
+    display: block;
+  }
+
+  .field-steps button small {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .field-steps-hint {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .field-panel-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .field-only {
+    display: inline-flex;
+  }
+
+  .bottom-action-bar {
+    flex-wrap: wrap;
   }
 
   .dialog-shell img {
