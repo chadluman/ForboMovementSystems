@@ -1503,6 +1503,40 @@ async function loadRecentCustomers() {
   }
 }
 
+async function saveCustomerOnly() {
+  const button = document.querySelector("#saveCustomerButton");
+  const status = document.querySelector("#customerSaveStatus");
+  const company = fieldValue("customerCompany");
+  if (!company) {
+    status.textContent = "Enter a company name before saving the customer.";
+    return;
+  }
+  button.disabled = true;
+  status.textContent = "Saving customer...";
+  try {
+    const result = await apiRequest("/api/customers", {
+      method: "POST",
+      body: JSON.stringify({
+        customer: {
+          company,
+          rep: fieldValue("customerRep"),
+          phone: fieldValue("customerPhone"),
+          email: fieldValue("customerEmail"),
+          address: fieldValue("customerAddress"),
+          application: fieldValue("application"),
+          number: fieldValue("quoteCustomerNumber")
+        }
+      })
+    });
+    status.textContent = `Customer saved: ${result.company}${result.created ? " (new record)" : " (updated record)"} — no purchase or quote required.`;
+    await findCustomerHistory();
+  } catch (error) {
+    status.textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+}
+
 async function saveCustomerQuote() {
   const button = document.querySelector("#saveQuote");
   button.disabled = true;
@@ -2210,6 +2244,7 @@ configureForm.addEventListener("submit", (event) => {
 document.querySelector("#printButton").addEventListener("click", printQuoteAppSheet);
 document.querySelector("#createQuoteAppButton").addEventListener("click", openQuoteApp);
 document.querySelector("#findCustomerButton").addEventListener("click", findCustomerHistory);
+document.querySelector("#saveCustomerButton").addEventListener("click", saveCustomerOnly);
 document.querySelector("#closeQuoteApp").addEventListener("click", () => quoteAppDialog.close());
 document.querySelector("#closeQuoteAppDone").addEventListener("click", () => quoteAppDialog.close());
 document.querySelector("#printQuoteApp").addEventListener("click", printQuoteAppSheet);
