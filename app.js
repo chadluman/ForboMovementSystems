@@ -1360,11 +1360,13 @@ function fillCustomerFields(customer) {
   setFieldValue("customerAddress", customer.address);
   setFieldValue("application", customer.application);
   setFieldValue("quoteCustomerNumber", customer.customerNumber);
+  document.querySelector("#customerNumberValue").textContent = customer.customerNumber || "—";
 }
 
 function clearCustomerFields() {
   ["customerCompany", "customerRep", "customerPhone", "customerEmail", "customerAddress", "application", "quoteCustomerNumber"]
     .forEach((id) => setFieldValue(id, ""));
+  document.querySelector("#customerNumberValue").textContent = "—";
   document.querySelector("#customerHistory").innerHTML =
     `<span class="small-note">Enter a company or email to review prior purchases.</span>`;
 }
@@ -1528,7 +1530,9 @@ async function saveCustomerOnly() {
         }
       })
     });
-    status.textContent = `Customer saved: ${result.company}${result.created ? " (new record)" : " (updated record)"} — no purchase or quote required.`;
+    status.textContent = `Customer saved: ${result.company} — customer number ${result.customerNumber}${result.created ? " (new record)" : " (updated record)"}.`;
+    setFieldValue("quoteCustomerNumber", result.customerNumber);
+    document.querySelector("#customerNumberValue").textContent = result.customerNumber || "—";
     await findCustomerHistory();
   } catch (error) {
     status.textContent = error.message;
@@ -1577,6 +1581,7 @@ function openQuoteApp() {
   const lines = quoteLineItems();
   document.querySelector("#quoteCustomerSummary").innerHTML = summaryMarkup([
     { label: "Company", value: fieldValue("customerCompany") },
+    { label: "Customer number", value: fieldValue("quoteCustomerNumber") },
     { label: "Customer rep", value: fieldValue("customerRep") },
     { label: "Phone", value: fieldValue("customerPhone") },
     { label: "Email", value: fieldValue("customerEmail") },
@@ -1591,6 +1596,10 @@ function openQuoteApp() {
   renderQuoteProductLines(lines);
 
   document.querySelector("#quoteProject").value = fieldValue("application");
+  const assignedNumber = document.querySelector("#customerNumberValue").textContent;
+  if (!fieldValue("quoteCustomerNumber") && assignedNumber && assignedNumber !== "—") {
+    setFieldValue("quoteCustomerNumber", assignedNumber);
+  }
   document.querySelector("#quoteDate").value = today;
   document.querySelector("#quoteAppNotes").value = fieldValue("notes");
 
