@@ -355,6 +355,39 @@ app.get("/api/customers/recent", requireAuth, databaseReady, async (req, res, ne
   }
 });
 
+app.post("/api/customers", requireAuth, databaseReady, async (req, res, next) => {
+  try {
+    const input = req.body?.customer || req.body || {};
+    const company = String(input.company || "").trim();
+    const email = String(input.email || "").trim().toLowerCase();
+    if (!company) return res.status(400).json({ error: "Customer company is required." });
+    const normalizedCompany = normalizeCompany(company);
+    const lookup = email ? { normalizedCompany, email } : { normalizedCompany, email: { $in: ["", null] } };
+    let customer = await Customer.findOne(lookup);
+    const created = !customer;
+    if (!customer) customer = new Customer({ company, normalizedCompany, email });
+    Object.assign(customer, {
+      company,
+      normalizedCompany,
+      rep: input.rep,
+      phone: input.phone,
+      email,
+      address: input.address,
+      application: input.application,
+      customerNumber: input.number
+    });
+    await customer.save();
+    res.status(created ? 201 : 200).json({
+      customerId: customer._id,
+      created,
+      company: customer.company,
+      email: customer.email
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 async function saveCustomerQuote(req, res, next) {
   try {
     const data = req.body;
