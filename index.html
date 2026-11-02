@@ -178,6 +178,7 @@
           <textarea id="customerAddress" rows="3" placeholder="Street, city, state, ZIP"></textarea>
           <label for="application">Application</label>
           <input id="application" type="text" placeholder="Conveyor use case">
+          <p class="small-note">Customer number: <strong id="customerNumberValue">—</strong></p>
           <button class="secondary-button" id="findCustomerButton" type="button">Find customer history</button>
           <button class="primary-button" id="saveCustomerButton" type="button">Save customer</button>
           <div class="small-note" id="customerSaveStatus" aria-live="polite"></div>
@@ -415,7 +416,7 @@
             <div class="section-heading">
               <h3>Quote details</h3>
             </div>
-            <label>Customer number<input id="quoteCustomerNumber" type="text"></label>
+            <label>Customer number<input id="quoteCustomerNumber" type="text" readonly placeholder="Assigned on creation"></label>
             <label>Project / quote name<input id="quoteProject" type="text"></label>
             <label>Requested date<input id="quoteDate" type="date"></label>
             <label>Desired delivery<input id="quoteDelivery" type="text" placeholder="Timing or date"></label>
