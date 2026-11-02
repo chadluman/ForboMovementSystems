@@ -91,7 +91,7 @@
           <div>
             <p class="eyebrow">Customer lookup</p>
             <h2>Find an existing account</h2>
-            <p>Enter the exact company name or customer email stored on the account.</p>
+            <p>Enter a company name or email — partial matches are shown, so exact spelling is no longer required.</p>
           </div>
           <div class="lookup-fields">
             <label for="lookupCompany">Company<input id="lookupCompany" type="text" autocomplete="organization"></label>
@@ -100,10 +100,22 @@
           </div>
           <div class="lookup-actions">
             <button class="secondary-button" id="cancelLookup" type="button">Cancel</button>
+            <button class="secondary-button" id="showRecentButton" type="button">Recent customers</button>
             <button class="primary-button" type="submit">Find customer</button>
           </div>
           <div class="lookup-status" id="lookupStatus" aria-live="polite"></div>
         </form>
+        <div class="draft-panel" id="draftRestorePanel" hidden>
+          <div>
+            <p class="eyebrow">Unsaved draft on this device</p>
+            <strong id="draftRestoreText">A draft quote was saved on this device.</strong>
+            <p class="small-note">Drafts are saved on this device only, not to MongoDB, until you save the quote to a customer.</p>
+          </div>
+          <div class="draft-actions">
+            <button class="primary-button" id="restoreDraftButton" type="button">Restore draft</button>
+            <button class="secondary-button" id="discardDraftButton" type="button">Discard draft</button>
+          </div>
+        </div>
       </main>
     </section>
 
@@ -257,6 +269,12 @@
           <label class="search-box" for="searchInput">
             <span>Search</span>
             <input id="searchInput" type="search" placeholder="FLT, sprocket, drainage, POM...">
+          </label>
+          <label for="materialFilter">Material
+            <select id="materialFilter"></select>
+          </label>
+          <label class="need-option" for="onlyMatchesCheckbox">
+            <input id="onlyMatchesCheckbox" type="checkbox"> Only show needs matches
           </label>
           <div class="segmented" id="categoryFilters" aria-label="Category filter"></div>
         </div>
@@ -460,12 +478,14 @@
           </section>
         </div>
 
-        <p class="small-note billing-note">For billing: the CSV file opens in Excel. Save as PDF uses your device's Print &rarr; Save as PDF, with the same billing-ready quote sheet.</p>
+        <div class="billing-checklist" id="billingChecklist" aria-live="polite"></div>
+        <p class="small-note billing-note">For billing: the CSV file opens in Excel. Save as PDF uses your device's Print &rarr; Save as PDF, with the same billing-ready quote sheet. Share uses your phone's share sheet when available, otherwise it downloads the CSV and opens a new email for you to attach it to.</p>
         <div class="config-actions">
           <input id="quoteImportFile" type="file" accept="application/json,.json" hidden>
           <button class="secondary-button" id="importQuoteJson" type="button">Import quote data</button>
           <button class="secondary-button" id="downloadQuoteJson" type="button">Download quote data</button>
           <button class="secondary-button" id="downloadQuoteCsv" type="button">Download Excel (CSV)</button>
+          <button class="primary-button" id="shareQuoteBilling" type="button">Share with billing</button>
           <button class="secondary-button" id="downloadQuotePdf" type="button">Save as PDF</button>
           <button class="secondary-button" id="printQuoteApp" type="button">Print</button>
           <button class="primary-button" id="saveQuote" type="button">Save Quote to Customer</button>
