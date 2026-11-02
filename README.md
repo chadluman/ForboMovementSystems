@@ -142,6 +142,15 @@ Customer records are stored in MongoDB and can be retrieved using:
 - Exact normalized company name, or
 - Exact lowercase email address.
 
+If there is no exact match, the search also returns up to 8 partial matches (company or email, case-insensitive) for the representative to pick from. The lookup panel also offers a Recent customers list (10 most recently updated).
+
+## Field Flow, Billing, and Drafts
+
+- On phone/tablet (up to 980px), a 4-step field bar guides Customer & needs → Products → Selected → Send to billing, with a sidebar "Show products" button and a mobile-only Send to billing button. Desktop keeps the full workspace.
+- Product matching: in addition to needs checkboxes and keyword search, the workspace offers a material filter, an "Only show needs matches" toggle, and a "Why this fits" line on recommended cards listing the matched needs.
+- Billing: in the Fullsan quote dialog, a completeness checklist shows missing required fields (company, application/project, at least one product, belt width, belt length) and recommended items (pull-force estimate, customer email). "Share with billing" uses the device share sheet with the CSV file when available; otherwise it downloads the CSV and opens a new email for the representative to attach it to. "Download Excel (CSV)" and "Save as PDF" (Print → Save as PDF) remain available.
+- Drafts: in-progress quotes are autosaved on the device only (localStorage, `forbo-draft-quote-v1`, no passwords) and can be restored from the customer gateway. A draft is cleared when the quote is saved to a customer, when the selector is reset, when the draft is discarded, or on sign-out. Drafts are never a substitute for Save to MongoDB.
+
 A successful lookup fills:
 
 - Company
@@ -178,7 +187,8 @@ Quotes link a customer to the authenticated salesperson, project information, re
 | `GET` | `/api/health` | Report server and database status. |
 | `GET` | `/api/products` | Return synchronized products. |
 | `POST` | `/api/products/sync` | Synchronize the bundled catalog. |
-| `GET` | `/api/customers/search` | Find a customer and recent quotes or purchases. |
+| `GET` | `/api/customers/search` | Find a customer and recent quotes or purchases; partial matches are returned as `suggestions` when there is no exact match. |
+| `GET` | `/api/customers/recent` | Return the 10 most recently updated customers. |
 | `POST` | `/api/quotes` | Save a draft quote to a customer record. |
 | `POST` | `/api/purchases` | Compatibility endpoint for saving a completed purchase. |
 
