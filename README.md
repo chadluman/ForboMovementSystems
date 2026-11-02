@@ -144,6 +144,8 @@ Customer records are stored in MongoDB and can be retrieved using:
 
 If there is no exact match, the search also returns up to 8 partial matches (company or email, case-insensitive) for the representative to pick from. The lookup panel also offers a Recent customers list (10 most recently updated).
 
+A customer can also be saved on its own, with no quote or purchase yet, using the workspace "Save customer" button (POST `/api/customers`). Saving a customer with the same normalized company and email updates the existing record instead of creating a duplicate. A later quote save will find that same customer.
+
 ## Field Flow, Billing, and Drafts
 
 - On phone/tablet (up to 980px), a 4-step field bar guides Customer & needs → Products → Selected → Send to billing, with a sidebar "Show products" button and a mobile-only Send to billing button. Desktop keeps the full workspace.
@@ -189,6 +191,7 @@ Quotes link a customer to the authenticated salesperson, project information, re
 | `POST` | `/api/products/sync` | Synchronize the bundled catalog. |
 | `GET` | `/api/customers/search` | Find a customer and recent quotes or purchases; partial matches are returned as `suggestions` when there is no exact match. |
 | `GET` | `/api/customers/recent` | Return the 10 most recently updated customers. |
+| `POST` | `/api/customers` | Create or update a customer with no quote or purchase required. |
 | `POST` | `/api/quotes` | Save a draft quote to a customer record. |
 | `POST` | `/api/purchases` | Compatibility endpoint for saving a completed purchase. |
 
