@@ -146,6 +146,8 @@ If there is no exact match, the search also returns up to 8 partial matches (com
 
 A customer can also be saved on its own, with no quote or purchase yet, using the workspace "Save customer" button (POST `/api/customers`). Saving a customer with the same normalized company and email updates the existing record instead of creating a duplicate. A later quote save will find that same customer.
 
+Customer numbers are assigned on creation: the first customer gets C-0001, the next C-0002, and so on, from an atomic counter stored in MongoDB. The number is shown in the workspace Customer section and in the quote dialog (read-only there), is assigned once and never overwritten by a later save, and is backfilled on the next save for any older customer that has no number yet. A manually supplied number (for example from an import) is used only for a customer with no number yet, and is rejected if another customer already has it. If the MongoDB database is wiped, the counter restarts at C-0001.
+
 ## Field Flow, Billing, and Drafts
 
 - On phone/tablet (up to 980px), a 4-step field bar guides Customer & needs → Products → Selected → Send to billing, with a sidebar "Show products" button and a mobile-only Send to billing button. Desktop keeps the full workspace.
