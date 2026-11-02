@@ -853,6 +853,21 @@ products.forEach((product) => {
 
 let activeCategory = "All";
 let activeSeries = "all";
+let activeMaterial = "All";
+let onlyMatches = false;
+
+function matchesMaterial(product, material) {
+  if (material === "All") return true;
+  const source = product.materials || "";
+  return new RegExp(`(^|[^A-Z0-9-])${material.replace("-", "\\-")}([^A-Z0-9-]|$)`).test(source);
+}
+
+function renderMaterialFilter() {
+  const select = document.querySelector("#materialFilter");
+  if (!select) return;
+  select.innerHTML = `<option value="All">All materials</option>` + materialOrder.map((material) => `<option value="${material}">${material}</option>`).join("");
+  select.value = activeMaterial;
+}
 const selectedNeeds = new Set();
 const selectedConfigurations = [];
 let configuringProductId = null;
@@ -1011,12 +1026,15 @@ function renderProducts() {
     .filter((product) => activeSeries === "all" || product.seriesId === activeSeries)
     .map((product) => ({ ...product, score: scoreProduct(product) }))
     .filter((product) => activeCategory === "All" || product.category === activeCategory)
+    .filter((product) => matchesMaterial(product, activeMaterial))
+    .filter((product) => !onlyMatches || product.score > 0)
     .filter((product) => !query || matchesSearch(product, query))
     .sort((a, b) => b.score - a.score || seriesOrderValue(a.seriesId) - seriesOrderValue(b.seriesId) || a.category.localeCompare(b.category) || a.title.localeCompare(b.title));
 
   productGrid.innerHTML = visible.map((product) => {
     const selectedCount = selectedConfigurations.filter((item) => item.productId === product.id).length;
     const recommended = product.score > 0;
+    const matchedNeedLabels = needs.filter((need) => selectedNeeds.has(need.id) && (product.tags || []).includes(need.id)).map((need) => need.label);
     const warning = product.id === "s61-36-flt";
     return `
       <article class="product-card ${recommended ? "is-recommended" : ""}">
@@ -1030,6 +1048,7 @@ function renderProducts() {
             <span class="score-pill">${recommended ? product.score + " match" : "review"}</span>
           </div>
           <p>${product.bestFit}</p>
+          ${matchedNeedLabels.length ? `<p class="small-note">Why this fits: ${matchedNeedLabels.join(", ")}.</p>` : ""}
           <div class="tags">
             <span class="tag opening">${product.opening}</span>
             ${product.tags.slice(0, 3).map((tag) => `<span class="tag">${tagLabel(tag)}</span>`).join("")}
@@ -1297,6 +1316,16 @@ async function findCustomerHistory() {
   try {
     const data = await apiRequest(`/api/customers/search?${params}`);
     if (!data.customer) {
+      if (data.suggestions?.length) {
+        history.innerHTML = `<span class="small-note">No exact match — did you mean:</span><div class="suggestion-list">${data.suggestions.map((item, index) => `<button class="secondary-button" type="button" data-suggestion="${index}">${escapeHtml(item.company)}</button>`).join("")}</div>`;
+        history.querySelectorAll("[data-suggestion]").forEach((button) => {
+          button.addEventListener("click", () => {
+            fillCustomerFields(data.suggestions[Number(button.dataset.suggestion)]);
+            findCustomerHistory();
+          });
+        });
+        return;
+      }
       history.innerHTML = `<span class="small-note">No prior customer or quote history found.</span>`;
       return;
     }
@@ -1344,6 +1373,7 @@ function showPortalScreen(screen) {
   document.querySelector("#loginScreen").hidden = screen !== "login";
   document.querySelector("#customerGateway").hidden = screen !== "gateway";
   document.querySelector("#appShell").hidden = screen !== "workspace";
+  if (screen === "gateway") updateDraftRestorePanel();
 }
 
 function applySalesRep(rep) {
@@ -1406,6 +1436,7 @@ async function logout() {
   await apiRequest("/api/auth/logout", { method: "POST" }).catch(() => {});
   authenticatedRep = null;
   clearCustomerFields();
+  clearDraft();
   showPortalScreen("login");
 }
 
@@ -1426,12 +1457,47 @@ async function lookupCustomer(event) {
   try {
     const data = await apiRequest(`/api/customers/search?${params}`);
     if (!data.customer) {
+      if (data.suggestions?.length) {
+        status.innerHTML = `<p class="small-note">No exact match — did you mean:</p><div class="suggestion-list">${data.suggestions.map((item, index) => `<button class="secondary-button" type="button" data-suggestion="${index}"><strong>${escapeHtml(item.company)}</strong><span> · ${escapeHtml(item.email || item.rep || "Customer record")}</span></button>`).join("")}</div>`;
+        status.querySelectorAll("[data-suggestion]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const suggestion = data.suggestions[Number(button.dataset.suggestion)];
+            fillCustomerFields(suggestion);
+            status.innerHTML = `<div class="lookup-result"><strong>${escapeHtml(suggestion.company)}</strong><span>${escapeHtml(suggestion.rep || suggestion.email || "Customer record")}</span><button class="primary-button" id="continueCustomer" type="button">Continue with customer</button></div>`;
+            document.querySelector("#continueCustomer").addEventListener("click", openWorkspace, { once: true });
+          });
+        });
+        return;
+      }
       status.innerHTML = `<div class="lookup-message is-error">No matching customer was found. Check the spelling or start a new customer record.</div>`;
       return;
     }
     fillCustomerFields(data.customer);
     status.innerHTML = `<div class="lookup-result"><strong>${escapeHtml(data.customer.company)}</strong><span>${escapeHtml(data.customer.rep || data.customer.email || "Customer record")}</span><span>${data.purchases.length} saved quote${data.purchases.length === 1 ? "" : "s"}</span><button class="primary-button" id="continueCustomer" type="button">Continue with customer</button></div>`;
     document.querySelector("#continueCustomer").addEventListener("click", openWorkspace, { once: true });
+  } catch (error) {
+    status.innerHTML = `<div class="lookup-message is-error">${escapeHtml(error.message)}</div>`;
+  }
+}
+
+async function loadRecentCustomers() {
+  const status = document.querySelector("#lookupStatus");
+  status.innerHTML = `<span class="small-note">Loading recent customers...</span>`;
+  try {
+    const data = await apiRequest("/api/customers/recent");
+    if (!data.customers?.length) {
+      status.innerHTML = `<div class="lookup-message">No recent customers found yet.</div>`;
+      return;
+    }
+    status.innerHTML = `<p class="small-note">Recent customers:</p><div class="suggestion-list">${data.customers.map((item, index) => `<button class="secondary-button" type="button" data-suggestion="${index}"><strong>${escapeHtml(item.company)}</strong><span> · ${escapeHtml(item.email || item.rep || "Customer record")}</span></button>`).join("")}</div>`;
+    status.querySelectorAll("[data-suggestion]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const customer = data.customers[Number(button.dataset.suggestion)];
+        fillCustomerFields(customer);
+        status.innerHTML = `<div class="lookup-result"><strong>${escapeHtml(customer.company)}</strong><span>${escapeHtml(customer.rep || customer.email || "Customer record")}</span><button class="primary-button" id="continueCustomer" type="button">Continue with customer</button></div>`;
+        document.querySelector("#continueCustomer").addEventListener("click", openWorkspace, { once: true });
+      });
+    });
   } catch (error) {
     status.innerHTML = `<div class="lookup-message is-error">${escapeHtml(error.message)}</div>`;
   }
@@ -1450,6 +1516,7 @@ async function saveCustomerQuote() {
       body: JSON.stringify(data)
     });
     setDatabaseStatus(`Quote ${result.quoteNumber} saved to customer ${purchaseDate(result.savedAt)}.`);
+    clearDraft();
     await findCustomerHistory();
   } catch (error) {
     setDatabaseStatus(error.message, true);
@@ -1500,6 +1567,7 @@ function openQuoteApp() {
     document.querySelector("#quoteQuantity").value = firstLine.quantity || "1";
   }
 
+  renderBillingChecklist();
   quoteAppDialog.showModal();
 }
 
@@ -1557,6 +1625,7 @@ function runQuoteCalculation() {
     <span>Source: workbook VBA maps inputs into PFcalc; formulas H51 and C64 perform the pull-force calculation.</span>
     ${missing.length ? `<span>Needed for better estimate: ${missing.join(", ")}.</span>` : ""}
   `;
+  renderBillingChecklist();
 }
 
 function collectQuoteAppData() {
@@ -1629,8 +1698,7 @@ function csvCell(value) {
   return `"${String(value ?? "-").replace(/"/g, '""').replace(/\r?\n/g, " ")}"`;
 }
 
-function downloadQuoteCsv() {
-  const data = collectQuoteAppData();
+function buildBillingCsv(data) {
   const rows = [
     ["Forbo Movement Systems — Quote for billing"],
     ["Export date", new Date().toISOString().slice(0, 10)],
@@ -1681,14 +1749,162 @@ function downloadQuoteCsv() {
     ["Quote notes"],
     [data.quote.notes]
   ];
-  const csv = "\ufeff" + rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  return "\ufeff" + rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
+}
+
+function downloadQuoteCsv() {
+  const data = collectQuoteAppData();
+  const blob = new Blob([buildBillingCsv(data)], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
   link.download = `${quoteFileSlug(data)}-quote-billing.csv`;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function quoteCompleteness(data) {
+  const missing = [];
+  if (!data.customer.company) missing.push("Customer company");
+  if (!data.customer.application && !data.quote.project) missing.push("Application / project");
+  if (!data.configuredProducts.length) missing.push("At least one configured product");
+  if (!data.quote.beltWidth) missing.push("Belt width");
+  if (!data.quote.beltLength) missing.push("Belt length");
+  const recommended = [];
+  if (!data.quote.calculation) recommended.push("Pull-force estimate not run yet");
+  if (!data.customer.email) recommended.push("Customer email (for billing follow-up)");
+  return { missing, recommended };
+}
+
+function renderBillingChecklist() {
+  const box = document.querySelector("#billingChecklist");
+  if (!box) return;
+  const data = collectQuoteAppData();
+  const { missing, recommended } = quoteCompleteness(data);
+  if (!missing.length && !recommended.length) {
+    box.innerHTML = `<strong>Ready to send to billing.</strong><span>All required fields are filled.</span>`;
+    box.classList.remove("is-incomplete");
+    return;
+  }
+  box.classList.toggle("is-incomplete", missing.length > 0);
+  box.innerHTML = `
+    <strong>${missing.length ? `Before sending, complete: ${missing.join(", ")}.` : "Ready to send, with notes below."}</strong>
+    ${recommended.length ? `<span>Also good to have: ${recommended.join(", ")}.</span>` : ""}
+  `;
+}
+
+async function shareQuoteWithBilling() {
+  const data = collectQuoteAppData();
+  const { missing } = quoteCompleteness(data);
+  if (missing.length && !window.confirm(`Still missing: ${missing.join(", ")}. Share anyway?`)) return;
+  const filename = `${quoteFileSlug(data)}-quote-billing.csv`;
+  const file = new File([buildBillingCsv(data)], filename, { type: "text/csv;charset=utf-8" });
+  const status = document.querySelector("#databaseStatus");
+  const setShareStatus = (message, isError = false) => {
+    if (!status) return;
+    status.textContent = message;
+    status.classList.add("is-visible");
+    status.classList.toggle("is-error", isError);
+  };
+  try {
+    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+      await navigator.share({
+        title: `Forbo quote — ${data.customer.company || data.quote.project || "Quote"}`,
+        text: `Forbo Movement Systems quote for ${data.customer.company || "billing"}. CSV attached.`,
+        files: [file]
+      });
+      setShareStatus("Quote shared from this device.");
+      return;
+    }
+  } catch (error) {
+    if (error?.name === "AbortError") return;
+    setShareStatus(`Share was not available on this device, so the CSV was downloaded instead: ${error.message}`, true);
+  }
+  downloadQuoteCsv();
+  const subject = encodeURIComponent(`Forbo quote — ${data.customer.company || data.quote.project || "Quote"}`);
+  const body = encodeURIComponent(`Forbo Movement Systems quote for ${data.customer.company || ""}.\n\nThe CSV billing file has been downloaded — please attach it to this email before sending.\n\nApplication: ${data.customer.application || data.quote.project || ""}\nProducts: ${data.configuredProducts.map((line) => line.product).join(", ") || "None configured yet"}`);
+  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+}
+
+const DRAFT_STORAGE_KEY = "forbo-draft-quote-v1";
+const DRAFT_FIELD_IDS = [
+  "customerCompany", "customerRep", "customerPhone", "customerEmail", "customerAddress", "application",
+  "salespersonName", "salespersonPhone", "salespersonEmail", "notes",
+  "quoteCustomerNumber", "quoteProject", "quoteDate", "quoteDelivery", "quoteBeltWidth", "quoteBeltLength",
+  "quoteLengthAdjustment", "quoteQuantity", "quoteCleats", "quoteCleatHeight", "quoteSidewalls", "quoteSidewallHeight",
+  "quoteTopGuides", "quoteBottomGuides", "quoteGuideSpacing", "quoteSprockets", "quoteConveyorType",
+  "quoteConveyorLength", "quoteConveyorSpeed", "quoteProductLoad", "quoteInclineAngle", "quoteEnvironment",
+  "quoteFriction", "quoteBeltWeight", "quoteAllowablePull", "quoteAppNotes"
+];
+
+function readDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return null;
+    const draft = JSON.parse(raw);
+    return draft && typeof draft === "object" ? draft : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveDraft() {
+  try {
+    const fields = {};
+    DRAFT_FIELD_IDS.forEach((id) => { fields[id] = fieldValue(id); });
+    const hasData = Object.values(fields).some(Boolean) || selectedNeeds.size > 0 || selectedConfigurations.length > 0;
+    // Do not delete here: the first render on a fresh page load has empty fields,
+    // and deleting then would wipe a draft the rep has not restored yet.
+    // Explicit clears (Reset, Save to customer, Sign out, Discard) use clearDraft().
+    if (!hasData) return;
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({
+      savedAt: new Date().toISOString(),
+      fields,
+      selectedNeeds: [...selectedNeeds],
+      selectedConfigurations: JSON.parse(JSON.stringify(selectedConfigurations)),
+      activeSeries,
+      activeCategory,
+      activeMaterial,
+      onlyMatches
+    }));
+  } catch {
+    // Private browsing or storage limits: the server save path still works.
+  }
+}
+
+function clearDraft() {
+  try { localStorage.removeItem(DRAFT_STORAGE_KEY); } catch {}
+  updateDraftRestorePanel();
+}
+
+function updateDraftRestorePanel() {
+  const panel = document.querySelector("#draftRestorePanel");
+  if (!panel) return;
+  const draft = readDraft();
+  const sameRep = !draft?.fields?.salespersonEmail || !authenticatedRep?.email || draft.fields.salespersonEmail === authenticatedRep.email;
+  if (!draft || !sameRep) {
+    panel.hidden = true;
+    return;
+  }
+  document.querySelector("#draftRestoreText").textContent = `Draft from ${purchaseDate(draft.savedAt)} — ${draft.fields.customerCompany || draft.fields.application || "unsaved quote"}.`;
+  panel.hidden = false;
+}
+
+function restoreDraft() {
+  const draft = readDraft();
+  if (!draft) return;
+  DRAFT_FIELD_IDS.forEach((id) => setFieldValue(id, draft.fields?.[id]));
+  selectedNeeds.clear();
+  (draft.selectedNeeds || []).forEach((need) => selectedNeeds.add(need));
+  selectedConfigurations.splice(0, selectedConfigurations.length, ...(draft.selectedConfigurations || []));
+  activeSeries = draft.activeSeries || "all";
+  activeCategory = draft.activeCategory || "All";
+  activeMaterial = draft.activeMaterial || "All";
+  onlyMatches = Boolean(draft.onlyMatches);
+  document.querySelector("#materialFilter").value = activeMaterial;
+  document.querySelector("#onlyMatchesCheckbox").checked = onlyMatches;
+  render();
+  openWorkspace();
 }
 
 function updateFieldSteps() {
@@ -1962,10 +2178,12 @@ function render() {
   renderSeries();
   renderNeeds();
   renderCategories();
+  renderMaterialFilter();
   renderProducts();
   renderSelection();
   renderStats();
   updateFieldSteps();
+  saveDraft();
 }
 
 seriesSelect.addEventListener("change", () => {
@@ -1974,6 +2192,14 @@ seriesSelect.addEventListener("change", () => {
   render();
 });
 searchInput.addEventListener("input", renderProducts);
+document.querySelector("#materialFilter").addEventListener("change", (event) => {
+  activeMaterial = event.target.value;
+  renderProducts();
+});
+document.querySelector("#onlyMatchesCheckbox").addEventListener("change", (event) => {
+  onlyMatches = event.target.checked;
+  renderProducts();
+});
 document.querySelector("#closeDialog").addEventListener("click", () => dialog.close());
 document.querySelector("#closeConfig").addEventListener("click", () => configureDialog.close());
 document.querySelector("#cancelConfig").addEventListener("click", () => configureDialog.close());
@@ -1990,6 +2216,7 @@ document.querySelector("#printQuoteApp").addEventListener("click", printQuoteApp
 document.querySelector("#saveQuote").addEventListener("click", saveCustomerQuote);
 document.querySelector("#downloadQuoteJson").addEventListener("click", downloadQuoteData);
 document.querySelector("#downloadQuoteCsv").addEventListener("click", downloadQuoteCsv);
+document.querySelector("#shareQuoteBilling").addEventListener("click", shareQuoteWithBilling);
 document.querySelector("#downloadQuotePdf").addEventListener("click", printQuoteAppSheet);
 document.querySelector("#sendToBillingButton").addEventListener("click", openQuoteApp);
 document.querySelector("#closeSidebarButton").addEventListener("click", () => {
@@ -2024,6 +2251,11 @@ document.querySelector("#resetButton").addEventListener("click", () => {
   selectedConfigurations.splice(0, selectedConfigurations.length);
   activeCategory = "All";
   activeSeries = "all";
+  activeMaterial = "All";
+  onlyMatches = false;
+  document.querySelector("#materialFilter").value = "All";
+  document.querySelector("#onlyMatchesCheckbox").checked = false;
+  clearDraft();
   searchInput.value = "";
   [
     "customerCompany",
@@ -2090,4 +2322,9 @@ document.querySelector("#cancelLookup").addEventListener("click", () => {
   document.querySelector("#lookupStatus").innerHTML = "";
 });
 document.querySelector("#lookupPanel").addEventListener("submit", lookupCustomer);
+document.querySelector("#showRecentButton").addEventListener("click", loadRecentCustomers);
+document.querySelector("#restoreDraftButton").addEventListener("click", restoreDraft);
+document.querySelector("#discardDraftButton").addEventListener("click", clearDraft);
+document.addEventListener("input", () => saveDraft());
+document.addEventListener("change", () => saveDraft());
 initializePortal();

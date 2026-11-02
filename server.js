@@ -297,13 +297,59 @@ app.get("/api/customers/search", requireAuth, databaseReady, async (req, res, ne
     if (company) filters.push({ normalizedCompany: company });
     if (email) filters.push({ email });
     const customer = await Customer.findOne({ $or: filters }).lean();
-    if (!customer) return res.json({ customer: null, purchases: [] });
+    if (!customer) {
+      const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const partial = [];
+      if (company) partial.push({ normalizedCompany: { $regex: escapeRegExp(company), $options: "i" } });
+      if (email) partial.push({ email: { $regex: escapeRegExp(email), $options: "i" } });
+      const suggestions = await Customer.find({ $or: partial })
+        .sort({ updatedAt: -1 })
+        .limit(8)
+        .lean();
+      return res.json({
+        customer: null,
+        purchases: [],
+        suggestions: suggestions.map((item) => ({
+          company: item.company,
+          rep: item.rep,
+          phone: item.phone,
+          email: item.email,
+          address: item.address,
+          application: item.application,
+          customerNumber: item.customerNumber
+        }))
+      });
+    }
 
     const purchases = await Purchase.find({ customer: customer._id })
       .sort({ createdAt: -1 })
       .limit(20)
       .lean();
     res.json({ customer, purchases });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/customers/recent", requireAuth, databaseReady, async (req, res, next) => {
+  try {
+    const customers = await Customer.find()
+      .sort({ updatedAt: -1 })
+      .limit(10)
+      .lean();
+    res.json({
+      customers: customers.map((item) => ({
+        company: item.company,
+        rep: item.rep,
+        phone: item.phone,
+        email: item.email,
+        address: item.address,
+        application: item.application,
+        customerNumber: item.customerNumber,
+        lastQuoteAt: item.lastQuoteAt,
+        lastPurchaseAt: item.lastPurchaseAt
+      }))
+    });
   } catch (error) {
     next(error);
   }
