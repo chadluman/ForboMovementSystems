@@ -1200,6 +1200,48 @@ dialog::backdrop {
   margin: 0 0 12px;
 }
 
+.billing-checklist {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 1px solid #b9d9c3;
+  border-radius: 8px;
+  background: #f0faf3;
+  font-size: 13px;
+}
+
+.billing-checklist.is-incomplete {
+  border-color: #f0c0b9;
+  background: #fff4f2;
+}
+
+.draft-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.draft-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.suggestion-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.suggestion-list button {
+  text-align: left;
+}
+
 .config-grid label,
 .config-notes {
   display: grid;
