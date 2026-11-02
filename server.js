@@ -107,6 +107,40 @@ const purchaseSchema = new mongoose.Schema({
 const Product = mongoose.model("Product", productSchema);
 const Customer = mongoose.model("Customer", customerSchema);
 const Purchase = mongoose.model("Purchase", purchaseSchema);
+const Counter = mongoose.model("Counter", new mongoose.Schema({
+  _id: String,
+  seq: { type: Number, default: 0 }
+}));
+
+// A customer number is assigned once, on creation, and never overwritten:
+// an existing number is kept, a supplied number is used only for a customer
+// with no number yet (and only if no other customer has it), otherwise the
+// next sequential number (C-0001, C-0002, ...) is taken from an atomic counter.
+async function resolveCustomerNumber(customer, suppliedNumber) {
+  const existing = customer.customerNumber ? String(customer.customerNumber).trim() : "";
+  if (existing) return existing;
+  const supplied = suppliedNumber ? String(suppliedNumber).trim() : "";
+  if (supplied) {
+    const taken = await Customer.findOne({ customerNumber: supplied, _id: { $ne: customer._id } }).lean();
+    if (taken) {
+      const error = new Error(`Customer number ${supplied} is already assigned to another customer.`);
+      error.name = "ValidationError";
+      throw error;
+    }
+    return supplied;
+  }
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const counter = await Counter.findOneAndUpdate(
+      { _id: "customerNumber" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+    const candidate = `C-${String(counter.seq).padStart(4, "0")}`;
+    const taken = await Customer.findOne({ customerNumber: candidate }).lean();
+    if (!taken) return candidate;
+  }
+  throw new Error("Could not assign a customer number. Please try again.");
+}
 
 function createQuoteNumber() {
   const date = new Date();
@@ -373,15 +407,16 @@ app.post("/api/customers", requireAuth, databaseReady, async (req, res, next) =>
       phone: input.phone,
       email,
       address: input.address,
-      application: input.application,
-      customerNumber: input.number
+      application: input.application
     });
+    customer.customerNumber = await resolveCustomerNumber(customer, input.number);
     await customer.save();
     res.status(created ? 201 : 200).json({
       customerId: customer._id,
       created,
       company: customer.company,
-      email: customer.email
+      email: customer.email,
+      customerNumber: customer.customerNumber
     });
   } catch (error) {
     next(error);
@@ -413,9 +448,9 @@ async function saveCustomerQuote(req, res, next) {
       phone: data.customer.phone,
       email,
       address: data.customer.address,
-      application: data.customer.application,
-      customerNumber: data.customer.number
+      application: data.customer.application
     });
+    customer.customerNumber = await resolveCustomerNumber(customer, data.customer.number);
     if (recordType === "purchase") customer.lastPurchaseAt = new Date();
     else customer.lastQuoteAt = new Date();
     await customer.save();
@@ -440,6 +475,7 @@ async function saveCustomerQuote(req, res, next) {
 
     res.status(201).json({
       customerId: customer._id,
+      customerNumber: customer.customerNumber,
       purchaseId: purchase._id,
       quoteId: purchase._id,
       quoteNumber: purchase.quoteNumber,
